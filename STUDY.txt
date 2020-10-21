@@ -1,0 +1,305 @@
+Study Ansible
+
+https://www.youtube.com/watch?v=EcnqJbxBcM0
+
+# yum install ansible -y
+
+Ansible Hostfile is called "Inventory"
+
+# vi /etc/ansible/hosts
+
+	[ansible_clients]
+	192.168.1.1 ansible_ssh_pass=simplilearn ansible_ssh_user=root #clientip, username and password
+
+	[awsserver]
+	13.231.5.45 ansible_ssh_private_key_file=/home/mark/id_rsa.1
+
+
+IF GROUP
+
+	[servers]
+	server1 ansible_host=203.0.113.111
+	server2 ansible_host=203.0.113.112
+	server3 ansible_host=203.0.113.113
+
+	[all:vars]
+	ansible_python_interpreter=/usr/bin/python3
+
+
+Ansible Playbook for Configuration Management
+
+# vi sample.yml
+
+---
+- name: sample book
+  hosts: awsserver
+  remote_user: mark
+  become: true
+
+  tasks:
+   - name: install httpd
+     yum:
+       name: httpd
+       state: latest
+   - name: run httpd
+     service:
+       name: httpd
+       state: started
+   - name: create content
+     copy:
+       content: "Welcome to Mark Quilates ANSIBLE"
+       dest: /var/www/html/index.html
+   - name: ansible create directory example
+     file:
+       path: /etc/ansible/devops_directory
+       state: directory
+       mode: "u=rwx,g=r,o=r"
+       recurse: yes
+       owner: mark
+       group: mark
+
+:wq
+
+
+vi nginx.yml
+
+---
+- hosts: jenkins
+  remote_user: mark
+  become: true
+
+  tasks:
+    - name: ensure nginx is at the latest version
+      yum: name=nginx state=latest
+    - name: start nginx
+      service:
+          name: nginx
+          state: started
+          enabled: yes
+
+
+
+
+
+
+
+
+
+
+
+
+
+Check Ansible YAML file syntax if correct
+
+	# ansible-playbook sample.yml --syntax-check
+
+It will display playbook: then the nmae of playbook if no syntax error.
+
+Execute Ansible Playbook
+
+	# ansible-playbook sample.yml # sample.yml is playbook name. 
+
+
+
+
+Ansible Check
+
+	# ansible-inventory --list -y
+
+	# ansible all -m ping -u root
+
+
+
+Use private key in ansible
+
+https://www.cyberciti.biz/faq/define-ssh-key-per-host-using-ansible_ssh_private_key_file/
+
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+
+	Add username sudo priviledges in CentOS8 in the bottom
+
+	# sudo visudo
+		mark        ALL=(ALL)       NOPASSWD: ALL
+
+
+
+https://code-maven.com/install-and-configure-nginx-using-ansible
+
+
+***** JENKINS *****
+
+
+
+https://www.jenkins.io/doc/book/installing/
+
+https://www.youtube.com/watch?v=M32O4Yv0ANc
+
+https://www.youtube.com/watch?v=p_PqPBbjaZ4
+
+
+	Installing Java
+	
+	# yum search openjdk
+	# yum install openjdk-8-jdk
+	# java -version
+	
+	Check if Git already installed
+
+	# git --version
+	# rmp -aq | grep git
+	# yum install git-2.18.4-2.el8_2.x86_64
+	
+	OR
+
+	# sudo wget -O /etc/yum.repos.d/jenkins.repo/https://pkg.jenkins.io/redhat-stable/jenkins.repo
+	# sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+	# sudo yum upgrade
+	# sudo yum install jenkins java-1.8.0-openjdk-devel
+	# sudo systemctl daemon-reload
+
+	# systemctl start jenkins
+	# systemctl status jenkins
+	# systemctl enbale jenkins
+
+
+***** JENKINS NGINX *****
+
+	# vi /etc/nginx/conf.d/jenkins.conf
+
+server {
+        listen 443 ssl;
+        ssl_certificate /home/mark/self-key/megalodon.crt;
+        ssl_certificate_key /home/mark/self-key/megalodon.key;
+        ssl_session_cache shared:SSL:20m;
+        ssl_session_timeout 60m;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+        ssl_ciphers ECDH+AESGCM:ECDH+AES256:ECDH+AES128:DH+3DES:!ADH:!AECDH:!MD5;
+
+	include /etc/nginx/realip.conf;
+
+        server_name jenkins.megalodon.cf;
+
+        location / {
+                proxy_pass http://localhost:8080;
+                proxy_http_version  1.1;
+                proxy_set_header    Host $server_name:$server_port;
+                proxy_set_header    X-Forwarded-Host $http_host;
+                proxy_set_header    X-Forwarded-Proto $scheme;
+                proxy_set_header    X-Forwarded-For $remote_addr;#
+                proxy_set_header    Upgrade $http_upgrade;
+        }
+}
+
+:wq
+
+
+	# vi /etc/nginx/realip.conf
+
+set_real_ip_from 0.0.0.0/0;
+set_real_ip_from ::0/0;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+:wq
+
+
+
+	Get Java Path
+
+	# find / -name javac
+
+	Go to > Management Jenkins > Global Tool Configuration > JDK Tab
+	
+	Uncheck Install Automatically
+	Add Name: Java
+	JAVA_HOME: Put the ouput above command from the server without /bin/javac just like below
+
+	/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.265.b01-0.el8_2.x86_64
+
+
+
+
+Gitclient
+github 
+blueocean
+kubernetis
+
+Create User Management & Roles
+
+	Go to > Management Jenkins > Manage Plugins > Available Tab > Filter > Role-based Authorization Strategy
+	Go to > Management Jenkins > Configure Global Security > Authorization > Select Role-Based Strategy
+	Go to > Management Jenkins > Manage and Assigns Roles > Manage Roles > Add new on Global roles or Project-based Matrix Authorization Strategy
+	
+	If Select Role-Based Strategy
+	Go to > Management Jenkins > Manage and Assigns Roles > Assign Roles > Add user on Global roles
+	
+	If Project-based Matrix Authorization Strategy
+	Assign user on every project made.
+
+
+Enable EPEL repo for RHEL 8
+
+	# sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+	# sudo yum update
+
+
+
+
+https://www.youtube.com/watch?v=Z9G5stlXoyg&t=565s
+
+---
+ - hosts: ubuntu-web
+   remote_user: mark
+   become: true
+
+vi ubuntu-nginx.ym
+
+   tasks:
+     - name: Add nginx repo
+       apt_repository:
+          repo: deb http://ppa.launchpad.net/ondrej/nginx/ubuntu focal main
+          state: present
+
+     - name: Update apt repo and cache on all Debian/Ubuntu boxes
+       apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+     - name: Upgrade all apt packages
+       apt: upgrade=dist force_apt_get=yes
+
+     - name: Install nginx
+       apt: name=nginx
+
+     - name: Start and enable nginx
+       service:
+           name: nginx
+           state: started
+           enabled: yes
+
+
+
+
+
+
+DevOps Reference 
+
+https://www.youtube.com/watch?v=8D46Pgbz0gg&list=PLxzKY3wu0_FJdJd3IKdiM4Om1hGo2Hsdt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
